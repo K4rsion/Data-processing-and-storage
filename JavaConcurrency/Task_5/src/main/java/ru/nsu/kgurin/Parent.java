@@ -9,5 +9,6 @@ public class Parent {
         System.out.println("Interrupting...");
         thread.interrupt();
         System.out.println("Interrupted");
+        thread.join();
     }
 }
