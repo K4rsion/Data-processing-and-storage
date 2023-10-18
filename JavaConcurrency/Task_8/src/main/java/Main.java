@@ -1,30 +1,53 @@
+import java.util.ArrayList;
+import java.util.InputMismatchException;
+import java.util.List;
 import java.util.Scanner;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import static java.lang.Thread.sleep;
 
 public class Main {
-    private static final int ACCURACY = 10000;
-    private static double sum = 0.0;
-    private static ExecutorService pool;
+    private static final int ACCURACY = 100000;
+    private static Calculator[] threads;
 
     public static void main(String[] args) {
 
-
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Ctrl+C");
-
             try {
-                if (pool.awaitTermination(3, TimeUnit.SECONDS)) {
-                    System.out.println("Result value(SIGINT CAPTURED): " + sum);
-                } else {
-                    System.out.println("Result value(FORCED TERMINATION): " + sum);
-                }
+                sleep(2500);
             } catch (InterruptedException e) {
-                System.out.println(pool);
+                throw new RuntimeException(e);
             }
+            List<Integer> iterations = new ArrayList<>();
+            List<Double> results = new ArrayList<>();
+
+            /*
+            Create iterations list to find max iteration,
+            create results list to determine current result for every thread
+            and after that interrupt all threads.
+             */
+            for (var thread : threads) {
+                iterations.add(thread.getIteration() % ACCURACY);
+                results.add(thread.getResult());
+                thread.interrupt();
+            }
+
+            /*
+            Find max iteration number
+             */
+            int maxIteration = iterations.stream().max(Integer::compare).orElse(0);
+
+            /*
+            Take current thread result, calculate the rest of iteration and add it to result.
+             */
+            for (int i = 0; i < iterations.size(); i++) {
+                Double temp = results.get(i);
+                temp += calculate(iterations.get(i) + ACCURACY * i, maxIteration + ACCURACY * i, results.get(i));
+                results.set(i, temp);
+            }
+
+            System.out.println("Result value (after Ctrl+C): " + results.stream()
+                    .mapToDouble(Double::doubleValue)
+                    .sum());
         }));
 
         try {
@@ -32,21 +55,35 @@ public class Main {
             System.out.print("Enter thread number: ");
 
             int number = scanner.nextInt();
-            int iterationNum = (number * 2) * ACCURACY;
-            int pivot = iterationNum / (number * 2);
-            pool = Executors.newFixedThreadPool(number);
+            int pivot = ACCURACY;
+            threads = new Calculator[number];
 
             for (int i = 0; i < number; i++) {
-                Future<Double> result = pool.submit(new Calculator(pivot * i, pivot * (i + 1)));
-                Thread.sleep(1000);
-                sum += result.get();
-                System.out.println(result.get());
+                threads[i] = new Calculator(pivot * i, pivot * (i + 1));
+                threads[i].start();
             }
 
-            pool.shutdown();
+            double sum = 0.0;
+            for (Calculator thread : threads) {
+                thread.join();
+                sum += thread.getResult();
+            }
+
             System.out.println("Result value: " + sum);
-        } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e);
+
+
+        } catch (InputMismatchException | InterruptedException ex) {
+            System.out.println("Incorrect data format. Enter an integer.");
         }
+    }
+
+    private static double calculate(int from, int to, double result) {
+        if (from != to) {
+            for (int i = from; i < to; i++) {
+                result += Math.pow(-1, i) / (2 * i + 1);
+            }
+            return result * 4.0;
+        }
+        return 0.0;
     }
 }
