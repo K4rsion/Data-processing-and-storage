@@ -8,7 +8,7 @@ public class Parent {
         Thread.sleep(2000);
         System.out.println("Interrupting...");
         thread.interrupt();
-        System.out.println("Interrupted");
         thread.join();
+        System.out.println("Interrupted");
     }
 }
