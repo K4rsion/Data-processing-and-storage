@@ -1,21 +1,22 @@
 package ru.nsu.kgurin;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class Main {
     static final int NUMBER_OF_STRING_TO_PRINT = 10;
-
     public static void main(String[] args) {
         final Object lock = new Object();
-        final boolean[] flag = {true};
+        AtomicBoolean flag = new AtomicBoolean(true);
 
-        Thread child = new Thread(() -> {
+        Thread parent = new Thread(() -> {
             synchronized (lock) {
                 try {
                     for (int i = 0; i < NUMBER_OF_STRING_TO_PRINT/2; i++) {
-                        while (!flag[0]) {
+                        while (!flag.get()) {
                             lock.wait();
                         }
-                        System.out.println("Child");
-                        flag[0] = false;
+                        System.out.println("Parent");
+                        flag.set(false);
                         lock.notify();
                     }
                 } catch (InterruptedException e) {
@@ -24,15 +25,15 @@ public class Main {
             }
         });
 
-        Thread parent = new Thread(() -> {
+        Thread child = new Thread(() -> {
             synchronized (lock) {
                 try {
                     for (int i = 0; i < NUMBER_OF_STRING_TO_PRINT/2; i++) {
-                        while (flag[0]) {
+                        while (flag.get()) {
                             lock.wait();
                         }
-                        System.out.println("Parent");
-                        flag[0] = true;
+                        System.out.println("Child");
+                        flag.set(true);
                         lock.notify();
                     }
                 } catch (InterruptedException e) {
