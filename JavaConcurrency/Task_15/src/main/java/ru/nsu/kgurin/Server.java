@@ -8,11 +8,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Server {
     public static void main(String[] args) throws IOException {
         int port = 4040;
-        final boolean[] isClose = {false};
+        AtomicBoolean isClose = new AtomicBoolean(false);
         ServerSocket serverSocket = new ServerSocket(port);
         System.out.println("Server is listening on port " + port + "...");
         Socket clientSocket = serverSocket.accept();
@@ -24,12 +25,12 @@ public class Server {
         CompletableFuture.runAsync(() -> {
             try {
                 String message;
-                while (!isClose[0]) {
+                while (!isClose.get()) {
                     message = in.readLine();
                     if (message == null || message.equals("close")) {
                         clientSocket.close();
                         serverSocket.close();
-                        isClose[0] = true;
+                        isClose.set(true);
                         System.out.println("Client disconnected. Press Enter to disconnect");
                         break;
                     }
@@ -40,12 +41,12 @@ public class Server {
             }
         });
 
-        while (!isClose[0]) {
+        while (!isClose.get()) {
             String message = scanner.nextLine();
             if (message == null || message.equals("close")) {
                 clientSocket.close();
                 serverSocket.close();
-                isClose[0] = true;
+                isClose.set(true);
                 break;
             }
             out.println(message);

@@ -7,11 +7,12 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Client {
     public static void main(String[] args) throws IOException {
         int port = 4000;
-        final boolean[] isClose = {false};
+        AtomicBoolean isClose = new AtomicBoolean(false);
         Socket socket = new Socket("localhost", port);
         Scanner scanner = new Scanner(System.in);
         BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -21,11 +22,11 @@ public class Client {
         CompletableFuture.runAsync(() -> {
             try {
                 String message;
-                while (!isClose[0]) {
+                while (!isClose.get()) {
                     message = in.readLine();
                     if (message == null || message.equals("close")) {
                         socket.close();
-                        isClose[0] = true;
+                        isClose.set(true);
                         System.out.println("Server disconnected. Press Enter to disconnect");
                         break;
                     }
@@ -36,11 +37,11 @@ public class Client {
             }
         });
 
-        while (!isClose[0]) {
+        while (!isClose.get()) {
             String message = scanner.nextLine();
             if (message == null || message.equals("close")) {
                 socket.close();
-                isClose[0] = true;
+                isClose.set(true);
                 break;
             }
             out.println(message);

@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Proxy {
 
@@ -40,7 +41,7 @@ public class Proxy {
     private static void handleClient(Socket clientSocket, int serverPort) {
         try {
 
-            final boolean[] isClose = {false};
+            AtomicBoolean isClose = new AtomicBoolean(false);
             Socket serverSocket = new Socket("localhost", serverPort);
 
             CompletableFuture<Void> clientToServer = CompletableFuture.runAsync(() -> {
@@ -48,13 +49,13 @@ public class Proxy {
                     BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                     PrintWriter out = new PrintWriter(serverSocket.getOutputStream(), true);
                     String message;
-                    while (!isClose[0]) {
+                    while (!isClose.get()) {
                         try {
                             message = in.readLine();
                             if (message == null || message.equals("close")) {
                                 serverSocket.close();
                                 clientSocket.close();
-                                isClose[0] = true;
+                                isClose.set(true);
                             }
                             out.println(message);
                         } catch (SocketException ex) {
@@ -71,13 +72,13 @@ public class Proxy {
                     BufferedReader in = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
                     PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
                     String message;
-                    while (!isClose[0]) {
+                    while (!isClose.get()) {
                         try {
                             message = in.readLine();
                             if (message == null || message.equals("close")) {
                                 serverSocket.close();
                                 clientSocket.close();
-                                isClose[0] = true;
+                                isClose.set(true);
                             }
                             out.println(message);
                         } catch (SocketException ex) {
