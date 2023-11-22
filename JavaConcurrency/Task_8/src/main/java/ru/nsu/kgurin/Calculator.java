@@ -1,4 +1,4 @@
-
+package ru.nsu.kgurin;
 public class Calculator extends Thread {
     int from;
     int to;
