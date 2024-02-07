@@ -1,0 +1,6 @@
+.gradle/
+.idea/
+gradle/
+src/main/resources/people.xml
+.build/
+build/
