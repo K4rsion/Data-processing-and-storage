@@ -4,3 +4,5 @@ gradle/
 src/main/resources/people.xml
 .build/
 build/
+.gradlew
+.gradlew.bat
