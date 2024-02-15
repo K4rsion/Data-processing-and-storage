@@ -11,6 +11,9 @@ import javax.xml.stream.events.XMLEvent;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 public class PeopleParser {
@@ -230,8 +233,13 @@ public class PeopleParser {
             }
         }
 
-        for (Map.Entry<String, Person> setId : peopleIds.entrySet()) {
-            String name = setId.getValue().firstName + setId.getValue().firstName;
+
+        HashMap<String, HashSet<String>> daughterIds = new HashMap<>();
+        HashMap<String, HashSet<String>> sonIds = new HashMap<>();
+        Iterator<Map.Entry<String, Person>> iterator = peopleIds.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, Person> setId = iterator.next();
+            String name = setId.getValue().firstName + setId.getValue().lastName;
             if (peopleNames.containsKey(name)) {
                 setId.getValue().concat(peopleNames.get(name));
                 peopleNames.remove(name);
@@ -258,6 +266,14 @@ public class PeopleParser {
                 }
             }
 
+            for (var siblingId : setId.getValue().siblingsId) {
+                Person sibling = peopleIds.get(siblingId);
+                if (!sibling.parentId.isEmpty()) {
+                    setId.getValue().parentId.addAll(sibling.parentId);
+                    sibling.parentId.addAll(setId.getValue().parentId);
+                }
+            }
+
             // ты children по parent
             if (!setId.getValue().parentId.isEmpty()) {
                 for (String parentId : setId.getValue().parentId) {
@@ -278,8 +294,9 @@ public class PeopleParser {
             }
 
             if (!setId.getValue().childrenName.isEmpty()) {
-                for (String i : setId.getValue().childrenName) {
-                    Person child = peopleNames.get(i);
+                for (var childrenName : setId.getValue().childrenName) {
+                    childrenName = childrenName.replaceAll("\\s", "");
+                    Person child = peopleNames.get(childrenName);
                     if (child != null && child.id != null) {
                         if (child.gender.equals("M")) {
                             setId.getValue().sonId.add(child.id);
@@ -289,6 +306,8 @@ public class PeopleParser {
                     }
                 }
             }
+            daughterIds.put(setId.getKey(), setId.getValue().daughterId);
+            sonIds.put(setId.getKey(), setId.getValue().sonId);
 
             //daughter
             for (String i : setId.getValue().daughterId) {
@@ -302,5 +321,41 @@ public class PeopleParser {
                 setId.getValue().childrenName.add(sonName);
             }
         }
+
+
+        for (var daughterSet : daughterIds.entrySet()) {
+            Person parent = peopleIds.get(daughterSet.getKey());
+            HashSet<String> ids = new HashSet<>(daughterSet.getValue());
+            for (var daughterId : ids) {
+                Person daughter = peopleIds.get(daughterId);
+                for (var siblingId : daughter.siblingsId) {
+                    Person sibling = peopleIds.get(siblingId);
+                    if ("M".equals(sibling.gender)) {
+                        parent.sonId.add(sibling.id);
+                    } else {
+                        parent.daughterId.add(sibling.id);
+                    }
+                }
+            }
+        }
+
+
+        for (var sonSet : sonIds.entrySet()) {
+            Person parent = peopleIds.get(sonSet.getKey());
+            HashSet<String> ids = new HashSet<>(sonSet.getValue());
+            for (var sonId : ids) {
+                Person son = peopleIds.get(sonId);
+                for (var siblingId : son.siblingsId) {
+                    Person sibling = peopleIds.get(siblingId);
+                    if ("M".equals(sibling.gender)) {
+                        parent.sonId.add(sibling.id);
+                    } else {
+                        parent.daughterId.add(sibling.id);
+                    }
+                }
+            }
+        }
+
+
     }
 }
