@@ -13,8 +13,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class PeopleParser {
     private final ArrayList<Person> people = new ArrayList<>();
@@ -356,6 +356,194 @@ public class PeopleParser {
             }
         }
 
+        ArrayList<Person> nonameProcessed = new ArrayList<>();
+        for (var nPerson : noname) {
+            if (!nPerson.sonId.isEmpty()) {
+                for (var sonId : nPerson.sonId) {
+                    Person son = peopleIds.get(sonId);
+                    if (son != null && !son.parentId.isEmpty()) {
+                        for (var parentId : son.parentId) {
+                            Person parent = peopleIds.get(parentId);
+                            if (parent.gender != null && (parent.gender).equals(nPerson.gender)) {
+                                mergePerson(parent, nPerson);
+                            } else {
+                                if (parent.wifeId != null) {
+                                    Person parentSpouse = peopleIds.get(parent.wifeId);
+                                    mergePerson(parentSpouse, nPerson);
+                                } else if (parent.husbandId != null) {
+                                    Person parentSpouse = peopleIds.get(parent.husbandId);
+                                    mergePerson(parentSpouse, nPerson);
+                                }
+                            }
+                        }
+                    }
+                }
+                nonameProcessed.add(nPerson);
+            }
+            if (!nPerson.daughterId.isEmpty()) {
+                for (var daughterId : nPerson.daughterId) {
+                    Person daughter = peopleIds.get(daughterId);
+                    if (daughter != null && !daughter.parentId.isEmpty()) {
+                        for (var parentId : daughter.parentId) {
+                            Person parent = peopleIds.get(parentId);
+                            if (parent.gender != null && (parent.gender).equals(nPerson.gender)) {
+                                mergePerson(parent, nPerson);
+                            } else {
+                                if (parent.wifeId != null) {
+                                    Person parentSpouse = peopleIds.get(parent.wifeId);
+                                    mergePerson(parentSpouse, nPerson);
+                                } else if (parent.husbandId != null) {
+                                    Person parentSpouse = peopleIds.get(parent.husbandId);
+                                    mergePerson(parentSpouse, nPerson);
+                                }
+                            }
+                        }
+                    }
+                }
+                nonameProcessed.add(nPerson);
+            }
+            if (nPerson.wifeId != null) {
+                Person wife = peopleIds.get(nPerson.wifeId);
+                if (peopleIds.get(wife.husbandId) != null) {
+                    mergePerson(peopleIds.get(wife.husbandId), nPerson);
+                }
+                nonameProcessed.add(nPerson);
+            }
+            if (nPerson.husbandId != null) {
+                Person husband = peopleIds.get(nPerson.husbandId);
+                if (peopleIds.get(husband.wifeId) != null) {
+                    mergePerson(peopleIds.get(husband.wifeId), nPerson);
+                }
+                nonameProcessed.add(nPerson);
+            }
+            if (!nPerson.parentId.isEmpty() && nPerson.firstName != null && !nPerson.firstName.isEmpty()) {
+                for (var parentID : nPerson.parentId) {
+                    Person parent = peopleIds.get(parentID);
+                    if (parent != null) {
+                        if ("M".equals(nPerson.gender) && !parent.sonId.isEmpty()) {
+                            Optional<Person> currentSon = parent.sonId.stream()
+                                    .map(peopleIds::get)
+                                    .filter(son -> son != null && son.firstName.equals(nPerson.firstName))
+                                    .findFirst();
+                            currentSon.ifPresent(person -> mergePerson(person, nPerson));
+                        }
+                        if ("F".equals(nPerson.gender) && !parent.daughterId.isEmpty()) {
+                            Optional<Person> currentDaughter = parent.daughterId.stream()
+                                    .map(peopleIds::get)
+                                    .filter(daughter -> daughter != null && daughter.firstName.equals(nPerson.firstName))
+                                    .findFirst();
+                            currentDaughter.ifPresent(person -> mergePerson(person, nPerson));
+                        }
+                    }
+                }
+                nonameProcessed.add(nPerson);
+            }
+            if (!nPerson.siblingsId.isEmpty()) {
+                continue;
+            }
+            if (!nPerson.sisterId.isEmpty() && nPerson.firstName != null && !nPerson.firstName.isEmpty()) {
+                for (var sisterID : nPerson.sisterId) {
+                    Person sister = peopleIds.get(sisterID);
+                    if (sister != null) {
+                        if ("M".equals(nPerson.gender) && sister.brotherId != null) {
+                            Optional<Person> currentBrother = sister.brotherId.stream()
+                                    .map(peopleIds::get)
+                                    .filter(brother -> brother != null && brother.firstName.equals(nPerson.firstName))
+                                    .findFirst();
+                            currentBrother.ifPresent(person -> mergePerson(person, nPerson));
+                        }
+                        if ("F".equals(nPerson.gender) && sister.sisterId != null) {
+                            Optional<Person> currentSister = sister.sisterId.stream()
+                                    .map(peopleIds::get)
+                                    .filter(sisterTwo -> sisterTwo != null && sisterTwo.firstName.equals(nPerson.firstName))
+                                    .findFirst();
+                            currentSister.ifPresent(person -> mergePerson(person, nPerson));
+                        }
+                    }
+                }
+                nonameProcessed.add(nPerson);
+            }
+            if (!nPerson.brotherId.isEmpty() && nPerson.firstName != null && !nPerson.firstName.isEmpty()) {
+                for (var brotherID : nPerson.brotherId) {
+                    Person brother = peopleIds.get(brotherID);
+                    if (brother != null) {
+                        if ("M".equals(nPerson.gender) && brother.brotherId != null) {
+                            Optional<Person> currentBrother = brother.brotherId.stream()
+                                    .map(peopleIds::get)
+                                    .filter(brotherTwo -> brotherTwo != null && brotherTwo.firstName.equals(nPerson.firstName))
+                                    .findFirst();
+                            currentBrother.ifPresent(person -> mergePerson(person, nPerson));
+                        }
+                        if ("F".equals(nPerson.gender) && brother.sisterId != null) {
+                            Optional<Person> currentSister = brother.sisterId.stream()
+                                    .map(peopleIds::get)
+                                    .filter(sister -> sister != null && sister.firstName.equals(nPerson.firstName))
+                                    .findFirst();
+                            currentSister.ifPresent(person -> mergePerson(person, nPerson));
+                        }
+                    }
+                }
+                nonameProcessed.add(nPerson);
+            }
+        }
+        System.out.println("");
+        noname.removeAll(nonameProcessed);
+    }
 
+    private void mergePerson(Person personToAdd, Person personFromAdd) {
+        // person
+        if (personToAdd.id == null) {
+            personToAdd.id = personFromAdd.id;
+        }
+        if (personToAdd.firstName == null) {
+            personToAdd.firstName = personFromAdd.firstName;
+        }
+        if (personToAdd.lastName == null) {
+            personToAdd.lastName = personFromAdd.lastName;
+        }
+        if (personToAdd.gender == null) {
+            personToAdd.gender = personFromAdd.gender;
+        }
+
+        // spouse
+        if (personToAdd.spouceName == null) {
+            personToAdd.spouceName = personFromAdd.spouceName;
+        }
+        if (personToAdd.wifeId == null) {
+            personToAdd.wifeId = personFromAdd.wifeId;
+        }
+        if (personToAdd.husbandId == null) {
+            personToAdd.husbandId = personFromAdd.husbandId;
+        }
+
+        // children
+        if (personToAdd.childrenNumber == null) {
+            personToAdd.childrenNumber = personFromAdd.childrenNumber;
+        }
+        personToAdd.daughterId.addAll(personFromAdd.daughterId);
+        personToAdd.sonId.addAll(personFromAdd.sonId);
+        if (personToAdd.childrenName == null) {
+            personToAdd.childrenName = personFromAdd.childrenName;
+        }
+
+        // parents
+        if (personToAdd.parentName == null) {
+            personToAdd.parentName = personFromAdd.parentName;
+        }
+        personToAdd.parentId.addAll(personFromAdd.parentId);
+        if (personToAdd.motherName == null) {
+            personToAdd.motherName = personFromAdd.motherName;
+        }
+        if (personToAdd.fatherName == null) {
+            personToAdd.fatherName = personFromAdd.fatherName;
+        }
+
+        // siblings
+        if (personToAdd.siblingsNumber == null) {
+            personToAdd.siblingsNumber = personFromAdd.siblingsNumber;
+        }
+        personToAdd.siblingsId.addAll(personFromAdd.siblingsId);
+        personToAdd.sisterId.addAll(personFromAdd.sisterId);
+        personToAdd.brotherId.addAll(personFromAdd.brotherId);
     }
 }

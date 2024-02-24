@@ -32,7 +32,7 @@ public class Person {
     HashSet<String> sisterId = new HashSet<>();
     HashSet<String> brotherId = new HashSet<>();
 
-    //spouce
+    //spouse
     public void setSpouceName(String spouceName) {
         this.spouceName = spouceName;
     }
