@@ -219,7 +219,7 @@ public class PeopleParser {
                 } else {
                     extractedPeople.put(i.id, i);
                 }
-            } else if (!"".equals(i.firstName) && !"".equals(i.lastName)) {
+            } else if (!i.firstName.isEmpty() && !i.lastName.isEmpty()) {
                 String name = i.firstName + i.lastName;
                 if (peopleNames.containsKey(name)) {
                     (peopleNames.get(name)).concat(i);
@@ -234,7 +234,7 @@ public class PeopleParser {
 
         HashMap<String, HashSet<String>> daughterIds = new HashMap<>();
         HashMap<String, HashSet<String>> sonIds = new HashMap<>();
-        for (Map.Entry<String, Person> setId : extractedPeople.entrySet()) {
+        for (var setId : extractedPeople.entrySet()) {
             String name = setId.getValue().firstName + setId.getValue().lastName;
             if (peopleNames.containsKey(name)) {
                 setId.getValue().concat(peopleNames.get(name));
@@ -321,57 +321,56 @@ public class PeopleParser {
         setChildren(daughterIds);
         setChildren(sonIds);
 
-        for (var nPerson : noname) {
-            setSpouseBySon(nPerson);
-            setSpouseByDaughter(nPerson);
+        for (var person : extractedPeople.values()) {
+            setSpouseBySon(person);
+            setSpouseByDaughter(person);
 
-            if (nPerson.wifeId != null) {
-                Person wife = extractedPeople.get(nPerson.wifeId);
+            if (person.wifeId != null) {
+                Person wife = extractedPeople.get(person.wifeId);
                 if (extractedPeople.get(wife.husbandId) != null) {
-                    extractedPeople.get(wife.husbandId).concat(nPerson);
+                    extractedPeople.get(wife.husbandId).concat(person);
                 }
             }
-            if (nPerson.husbandId != null) {
-                Person husband = extractedPeople.get(nPerson.husbandId);
+            if (person.husbandId != null) {
+                Person husband = extractedPeople.get(person.husbandId);
                 if (extractedPeople.get(husband.wifeId) != null) {
-                    extractedPeople.get(husband.wifeId).concat(nPerson);
+                    extractedPeople.get(husband.wifeId).concat(person);
                 }
             }
-            if (!nPerson.parentId.isEmpty() && nPerson.firstName != null && !nPerson.firstName.isEmpty()) {
-                for (var parentID : nPerson.parentId) {
+
+            if (!person.parentId.isEmpty() && person.firstName != null && !person.firstName.isEmpty()) {
+                for (var parentID : person.parentId) {
                     Person parent = extractedPeople.get(parentID);
                     if (parent != null) {
-                        if ("M".equals(nPerson.gender) && !parent.sonId.isEmpty()) {
+                        if ("M".equals(person.gender) && !parent.sonId.isEmpty()) {
                             Optional<Person> currentSon = parent.sonId.stream()
                                     .map(extractedPeople::get)
-                                    .filter(son -> son != null && son.firstName.equals(nPerson.firstName))
+                                    .filter(son -> son != null && son.firstName.equals(person.firstName))
                                     .findFirst();
-                            currentSon.ifPresent(person -> person.concat(nPerson));
+                            currentSon.ifPresent(person1 -> person1.concat(person));
                         }
-                        if ("F".equals(nPerson.gender) && !parent.daughterId.isEmpty()) {
+                        if ("F".equals(person.gender) && !parent.daughterId.isEmpty()) {
                             Optional<Person> currentDaughter = parent.daughterId.stream()
                                     .map(extractedPeople::get)
-                                    .filter(daughter -> daughter != null && daughter.firstName.equals(nPerson.firstName))
+                                    .filter(daughter -> daughter != null && daughter.firstName.equals(person.firstName))
                                     .findFirst();
-                            currentDaughter.ifPresent(person -> person.concat(nPerson));
+                            currentDaughter.ifPresent(person1 -> person1.concat(person));
                         }
                     }
                 }
             }
-            if (!nPerson.sisterId.isEmpty() && nPerson.firstName != null && !nPerson.firstName.isEmpty()) {
-                for (var sisterID : nPerson.sisterId) {
-                    completePersonBySibling(nPerson, sisterID);
+            if (!person.sisterId.isEmpty() && person.firstName != null && !person.firstName.isEmpty()) {
+                for (var sisterID : person.sisterId) {
+                    completePersonBySibling(person, sisterID);
                 }
             }
-            if (!nPerson.brotherId.isEmpty() && nPerson.firstName != null && !nPerson.firstName.isEmpty()) {
-                for (var brotherID : nPerson.brotherId) {
-                    completePersonBySibling(nPerson, brotherID);
+            if (!person.brotherId.isEmpty() && person.firstName != null && !person.firstName.isEmpty()) {
+                for (var brotherID : person.brotherId) {
+                    completePersonBySibling(person, brotherID);
                 }
             }
-        }
 
-        //splitParentId
-        for (var person : extractedPeople.values()) {
+
             for (var sister : person.sistersName) {
                 if (peopleNames.get(sister) != null
                         && peopleNames.get(sister).id != null
@@ -400,7 +399,18 @@ public class PeopleParser {
                     }
                 }
             }
-            person.gender = "F";
+
+            if (person.fatherName != null && !person.fatherName.isEmpty() && peopleNames.get(person.fatherName.trim()) != null) {
+                person.fatherId = peopleNames.get(person.fatherName.trim()).id;
+            }
+
+            if (person.motherName != null && !person.motherName.isEmpty() && peopleNames.get(person.motherName.trim()) != null) {
+                person.motherId = peopleNames.get(person.motherName.trim()).id;
+            }
+
+            if (person.gender == null) {
+                person.gender = "F";
+            }
         }
     }
 

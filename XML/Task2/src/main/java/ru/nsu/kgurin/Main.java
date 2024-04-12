@@ -39,7 +39,7 @@ public class Main {
 
         people.getPerson().addAll(collectedData.values());
         try {
-            JAXBContext jc = null;
+            JAXBContext jc;
             ClassLoader classLoader = People.class.getClassLoader();
             jc = JAXBContext.newInstance("ru.nsu.kgurin.generated", classLoader);
             Marshaller writer = jc.createMarshaller();
