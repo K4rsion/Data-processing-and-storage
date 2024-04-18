@@ -11,6 +11,7 @@ import javax.xml.stream.events.XMLEvent;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -406,6 +407,44 @@ public class PeopleParser {
 
             if (person.motherName != null && !person.motherName.isEmpty() && peopleNames.get(person.motherName.trim()) != null) {
                 person.motherId = peopleNames.get(person.motherName.trim()).id;
+            }
+
+            if (person.fatherId != null && !person.siblingsId.isEmpty()) {
+                for (var siblingId : person.siblingsId) {
+                    extractedPeople.get(siblingId).fatherId = person.fatherId;
+                }
+                Person father = extractedPeople.get(person.fatherId);
+                for (var sonId : father.sonId) {
+                    extractedPeople.get(sonId).siblingsId.addAll(father.sonId.stream().filter(e->!e.equals(sonId)).toList());
+                    extractedPeople.get(sonId).siblingsId.addAll(father.daughterId);
+                    extractedPeople.get(sonId).sisterId.addAll(father.daughterId);
+                    extractedPeople.get(sonId).brotherId.addAll(father.sonId.stream().filter(e->!e.equals(sonId)).toList());
+                }
+                for (var daughterId : father.daughterId) {
+                    extractedPeople.get(daughterId).siblingsId.addAll(father.sonId);
+                    extractedPeople.get(daughterId).siblingsId.addAll(father.daughterId.stream().filter(e->!e.equals(daughterId)).toList());
+                    extractedPeople.get(daughterId).sisterId.addAll(father.daughterId.stream().filter(e->!e.equals(daughterId)).toList());
+                    extractedPeople.get(daughterId).brotherId.addAll(father.sonId);
+                }
+            }
+
+            if (person.motherId != null && !person.siblingsId.isEmpty()) {
+                for (var siblingId : person.siblingsId) {
+                    extractedPeople.get(siblingId).motherId = person.motherId;
+                }
+                Person mother = extractedPeople.get(person.motherId);
+                for (var sonId : mother.sonId) {
+                    extractedPeople.get(sonId).siblingsId.addAll(mother.sonId.stream().filter(e -> !e.equals(sonId)).toList());
+                    extractedPeople.get(sonId).siblingsId.addAll(mother.daughterId);
+                    extractedPeople.get(sonId).sisterId.addAll(mother.daughterId);
+                    extractedPeople.get(sonId).brotherId.addAll(mother.sonId.stream().filter(e -> !e.equals(sonId)).toList());
+                }
+                for (var daughterId : mother.daughterId) {
+                    extractedPeople.get(daughterId).siblingsId.addAll(mother.sonId);
+                    extractedPeople.get(daughterId).siblingsId.addAll(mother.daughterId.stream().filter(e -> !e.equals(daughterId)).toList());
+                    extractedPeople.get(daughterId).sisterId.addAll(mother.daughterId.stream().filter(e -> !e.equals(daughterId)).toList());
+                    extractedPeople.get(daughterId).brotherId.addAll(mother.sonId);
+                }
             }
 
             if (person.gender == null) {
