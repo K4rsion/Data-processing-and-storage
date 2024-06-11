@@ -1,7 +1,7 @@
 select 
-	f.flight_no as "race", 
+	f.flight_no as "flight_no", 
 	tf.fare_conditions as "class", 
-	to_char(f.scheduled_departure::timestamp with time zone, 'Day') as "day", 
+	to_char(f.scheduled_departure, 'HH24:MI') as "day", 
 	tf.amount as "price"
 from flights f
 inner join ticket_flights tf
