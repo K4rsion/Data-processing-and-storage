@@ -1,0 +1,398 @@
+openapi: 3.0.3
+info:
+  title: Airlines API specification
+  description: Specification of the API for providing air travel services
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/air
+
+tags:
+  - name: cities
+    description: Operations related to cities
+  - name: airports
+    description: Operations related to airports
+  - name: flights
+    description: Operations related to flights
+  - name: bookings
+    description: Operations related to bookings
+  - name: checkins
+    description: Operations related to check-ins
+
+paths:
+  /cities:
+    get:
+      tags:
+        - cities
+      summary: Unique routes from city to city
+      parameters:
+        - name: lang
+          in: query
+          description: Language (en, ru)
+          required: false
+          schema:
+            type: string
+            default: ru
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/City'
+
+  /airports:
+    get:
+      tags:
+        - airports
+      summary: Get unique airports
+      parameters:
+        - name: lang
+          in: query
+          description: Language (e.g., ru)
+          required: false
+          schema:
+            type: string
+            default: ru
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Airport'
+
+  /airportWithCity:
+    get:
+      tags:
+        - airports
+      summary: Get map of cities with their airports
+      parameters:
+        - name: lang
+          in: query
+          description: Language (e.g., ru)
+          required: false
+          schema:
+            type: string
+            default: ru
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AirportWithCity'
+
+  /inboundFlights:
+    get:
+      tags:
+        - flights
+      summary: Get inbound flights by arrival city
+      parameters:
+        - name: arrivalCity
+          in: query
+          description: Arrival city
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrivalCity'
+
+  /outboundFlights:
+    get:
+      tags:
+        - flights
+      summary: Get outbound flights by departure city
+      parameters:
+        - name: departureCity
+          in: query
+          description: Departure city
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartureCity'
+
+  /findFlightsByAirport:
+    get:
+      tags:
+        - flights
+      summary: Find flights by airports (departure and arrival)
+      parameters:
+        - name: departureAirport
+          in: query
+          description: Departure airport
+          required: true
+          schema:
+            type: string
+        - name: arrivalAirport
+          in: query
+          description: Arrival airport
+          required: true
+          schema:
+            type: string
+        - name: departureTime
+          in: query
+          description: Departure time
+          required: true
+          schema:
+            type: string
+        - name: fareConditions
+          in: query
+          description: Fare conditions
+          required: true
+          schema:
+            type: string
+        - name: targetLength
+          in: query
+          description: Count of intermidiate cities
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FlightAirport'
+
+  /book:
+    post:
+      tags:
+        - bookings
+      summary: Create a booking
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                flightNo:
+                  type: string
+                name:
+                  type: string
+                document:
+                  type: string
+                date:
+                  type: string
+                fareConditions:
+                  type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+
+  /checkIn:
+    post:
+      tags:
+        - checkins
+      summary: Perform check-in
+      parameters:
+        - name: ticketNo
+          in: query
+          description: Ticket number
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Checkin'
+
+components:
+  schemas:
+    City:
+      type: object
+      properties:
+        cityName:
+          type: string
+        countryCode:
+          type: string
+        population:
+          type: integer
+      example:
+        fromcity: Moscow
+        toCity: Abakan
+
+    Airport:
+      type: object
+      properties:
+        airportName:
+          type: string
+        city:
+          type: string
+        countryCode:
+          type: string
+      example:
+        fromAirport: Abakan Airport(ABA)
+        toAirport: Talagi Airport(ARH)
+    
+    FlightAirport:
+      type: object
+      properties:
+        departureAirport:
+          type: string
+        arrivalAirport:
+          type: string
+        departureTime:
+          type: string
+        fareConditions:
+          type: string
+        targetLength:
+          type: integer
+        airports:
+          type: array
+          items:
+            type: string
+        flightNos:
+          type: array
+          items:
+            type: string
+        amount:
+          type: number
+        daysOfWeek:
+          type: array
+          items:
+            type: integer
+      example:
+        departureAirport: BZK
+        arrivalAirport: RTW
+        departureTime: 2024-06-15
+        fareConditions: Economy
+        targetLength: 2
+        airports: [BZK, SVO, ULY, RTW]
+        flightNos: [ PG0163, PG0163, PG0283, PG0466]
+        amount: 19000.00
+        daysOfWeek: [1, 2, 4, 5, 0]
+        
+    Booking:
+      type: object
+      properties:
+        flightNo:
+          type: string
+        name:
+          type: string
+        document:
+          type: string
+        departureDate:
+          type: string
+        fareConditions:
+          type: string
+      example:
+        flightNo: 123456
+        name: John Doe
+        document: 9232 123142
+        departureDate: 2024-06-15
+        fareConditions: Comfort
+        airports: [BZK, SVO, ULY, RTW]
+        flightNos: [ PG0163, PG0163, PG0283, PG0466]
+        amount: 19000.00
+        daysOfWeek: [1, 2, 4, 5, 0]
+        
+    Checkin:
+      type: object
+      properties:
+        bookingId:
+          type: string
+        flightNo:
+          type: string
+        passengerName:
+          type: string
+        departureDate:
+          type: string
+        seatNumber:
+          type: string
+      example:
+        boardingNo: 123456
+        flightNo: SU123
+        passengerName: John Doe
+        departureDate: 2024-06-15
+        seatNumber: 12A
+        
+    AirportWithCity:
+      type: object
+      properties:
+        city:
+          type: string
+        airports:
+          type: array
+          items:
+            type: string
+      example:
+        city: Moscow
+        airports: [SVO, VKO, DME]
+        
+    ArrivalCity:
+      type: object
+      properties:
+        flightNo:
+          type: string
+        departureAirport:
+          type: string
+        departureCity:
+          type: string
+        arrivalAirport:
+          type: string
+        time:
+          type: string
+        daysOfWeek:
+          type: array
+          items:
+            type: string
+      example:
+        flightNo: PG0006
+        departureAirport: PKV
+        departureCity: Псков
+        arrivalAirport: DME
+        time: 23:25 +07:00
+        daysOfWeek: [1, 2, 4]
+        
+        
+    DepartureCity:
+      type: object
+      properties:
+        flightNo:
+          type: string
+        departureAirport:
+          type: string
+        arrivalCity:
+          type: string
+        arrivalAirport:
+          type: string
+        time:
+          type: string
+        daysOfWeek:
+          type: array
+          items:
+            type: string
+      example:
+        flightNo: PG0006
+        departureAirport: DME
+        arrivalCity: Псков
+        arrivalAirport: PKV
+        time: 23:25 +07:00
+        daysOfWeek: [1, 2, 4]
